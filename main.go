@@ -1,17 +1,16 @@
 package main
 
 import (
-	"fmt"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
-func IPHandler(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprint(w, req.RemoteAddr)
-}
-
 func main() {
-	http.HandleFunc("/", IPHandler)
-	if err := http.ListenAndServe(":9993", nil); err != nil {
+	r := gin.Default()
+	r.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, c.ClientIP())
+	})
+	if err := r.Run(":9993"); err != nil {
 		panic(err)
 	}
 }
