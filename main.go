@@ -41,7 +41,7 @@ func main() {
 			c.String(http.StatusInternalServerError, "查询IP信息失败: ", err.Error())
 			return
 		}
-		c.String(http.StatusOK, fmt.Sprintf("%s\n%s %s %s", clientIP, resp.Country, resp.Area, resp.Provider))
+		c.String(http.StatusOK, fmt.Sprintf("%s\n%s %s %s\n", clientIP, resp.Country, resp.Area, resp.Provider))
 	})
 	if err := r.Run(":9993"); err != nil {
 		panic(err)
