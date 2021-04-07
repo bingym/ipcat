@@ -19,6 +19,9 @@ type IPResp struct {
 func main() {
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, fmt.Sprintf("%s\n", c.ClientIP()))
+	})
+	r.GET("/info", func(c *gin.Context) {
 		clientIP := c.ClientIP()
 		response, err := grequests.Get(
 			"https://ip.mcr.moe",
