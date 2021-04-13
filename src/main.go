@@ -46,7 +46,7 @@ func main() {
 		}
 		c.String(http.StatusOK, fmt.Sprintf("%s\n%s %s %s\n", clientIP, resp.Country, resp.Area, resp.Provider))
 	})
-	if err := r.Run(":9993"); err != nil {
+	if err := r.Run(":80"); err != nil {
 		panic(err)
 	}
 }
