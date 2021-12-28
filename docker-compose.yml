@@ -6,6 +6,8 @@ services:
       dockerfile: Dockerfile
     expose:
       - "80"
+    environment:
+      APP_MODE: prod
     volumes:
       - /home/bingym/services/data:/app/data
     ports:

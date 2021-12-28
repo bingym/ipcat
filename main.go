@@ -1,30 +1,36 @@
 package main
 
 import (
-	"net/http"
-
+	"fmt"
 	"github.com/bingym/ipcat/ip2region"
 	"github.com/gin-gonic/gin"
+	"log"
+	"net/http"
+	"os"
 )
-
-type IPResp struct {
-	Address string
-	ip2region.IpInfo
-}
 
 func main() {
 	region, err := ip2region.New("./data/ip2region.db")
 	if err != nil {
-		panic(err)
+		log.Fatalln("init ip database failed: ", err)
+	}
+
+	if os.Getenv("APP_MODE") == "prod" {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
 	r := gin.Default()
+
 	r.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, fmt.Sprintf("%s\n", c.ClientIP()))
+	})
+
+	r.GET("/info", func(c *gin.Context) {
 		ipStr := c.DefaultQuery("addr", "")
 		if ipStr == "" {
 			ipStr = c.ClientIP()
 		}
-		ipInfo, err := region.BinarySearch(ipStr)
+		ipInfo, err := region.MemorySearch(ipStr)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, map[string]interface{}{
 				"code": http.StatusInternalServerError,
@@ -36,6 +42,6 @@ func main() {
 	})
 
 	if err := r.Run(":80"); err != nil {
-		panic(err)
+		log.Fatalln("server start failed: ", err)
 	}
 }
