@@ -1,51 +1,40 @@
 package main
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/levigross/grequests"
 	"net/http"
+
+	"github.com/bingym/ipcat/ip2region"
+	"github.com/gin-gonic/gin"
 )
 
 type IPResp struct {
-	Status   int    `json:"status"`
-	Message  string `json:"message"`
-	Addr     string `json:"addr"`
-	Country  string `json:"country"`
-	Area     string `json:"area"`
-	Provider string `json:"provider"`
+	Address string
+	ip2region.IpInfo
 }
 
 func main() {
+	region, err := ip2region.New("./data/ip2region.db")
+	if err != nil {
+		panic(err)
+	}
+
 	r := gin.Default()
 	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, fmt.Sprintf("%s\n", c.ClientIP()))
-	})
-	r.GET("/info", func(c *gin.Context) {
-		clientIP := c.ClientIP()
-		response, err := grequests.Get(
-			"https://ip.mcr.moe",
-			&grequests.RequestOptions{Params: map[string]string{
-				"ip":  clientIP,
-				"db2": "",
-			}},
-		)
+		ipStr := c.DefaultQuery("addr", "")
+		if ipStr == "" {
+			ipStr = c.ClientIP()
+		}
+		ipInfo, err := region.BinarySearch(ipStr)
 		if err != nil {
-			c.String(http.StatusBadRequest, "查询IP信息失败: "+err.Error())
+			c.JSON(http.StatusInternalServerError, map[string]interface{}{
+				"code": http.StatusInternalServerError,
+				"msg":  err.Error(),
+			})
 			return
 		}
-		defer response.Close()
-		if response.StatusCode != 200 {
-			c.String(http.StatusInternalServerError, "查询IP信息失败: "+response.String())
-			return
-		}
-		var resp IPResp
-		if err := response.JSON(&resp); err != nil {
-			c.String(http.StatusInternalServerError, "查询IP信息失败: ", err.Error())
-			return
-		}
-		c.String(http.StatusOK, fmt.Sprintf("%s\n%s %s %s\n", clientIP, resp.Country, resp.Area, resp.Provider))
+		c.JSON(http.StatusOK, ipInfo)
 	})
+
 	if err := r.Run(":80"); err != nil {
 		panic(err)
 	}

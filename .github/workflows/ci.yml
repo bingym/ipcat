@@ -13,4 +13,4 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.KEY }}
         port: ${{ secrets.PORT }}
-        script: cd repo/yinchuan && git pull -r && docker-compose down && docker-compose up -d && docker ps
+        script: cd repo/ipcat && git pull -r && docker-compose down && docker-compose up -d && docker ps

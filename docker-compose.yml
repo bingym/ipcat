@@ -6,5 +6,7 @@ services:
       dockerfile: Dockerfile
     expose:
       - "80"
+    volumes:
+      - /home/bingym/services/data:/app/data
     ports:
       - "9993:80"

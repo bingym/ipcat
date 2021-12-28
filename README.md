@@ -1,3 +1,3 @@
-# yinchuan
+# ipcat
 
-![DEPLOY](https://github.com/bingym/yinchuan/actions/workflows/ci.yml/badge.svg)
+![DEPLOY](https://github.com/bingym/ipcat/actions/workflows/ci.yml/badge.svg)
