@@ -1,5 +1,15 @@
 # ipcat
 
+## API
+
+### Request for only IP Address
+
+`GET /`
+
+### Reqeust for details
+
+`GET /info`
+
 ## Develop
 
 ```shell
@@ -10,11 +20,14 @@ go run main.go
 ## Deploy
 
 ```shell
-# build image
-docker build -t registry.cn-hangzhou.aliyuncs.com/bingym/ipcat:latest .
+# build
+docker build --platform linux/amd64 -t registry.cn-hangzhou.aliyuncs.com/bingym/ipcat_amd64:latest .
 
-# push image
-docker push registry.cn-hangzhou.aliyuncs.com/bingym/ipcat:latest
+# push
+docker push registry.cn-hangzhou.aliyuncs.com/bingym/ipcat_amd64:latest
+
+# pull
+docker pull registry.cn-hangzhou.aliyuncs.com/bingym/ipcat_amd64:latest
 ```
 
 ## Thanks
