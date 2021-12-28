@@ -9,6 +9,6 @@ services:
     environment:
       APP_MODE: prod
     volumes:
-      - /home/bingym/services/data:/app/data
+      - /home/bingym/services/ipcat/data:/app/data
     ports:
       - "9993:80"
