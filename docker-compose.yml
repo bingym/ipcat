@@ -1,9 +1,8 @@
 version: '3'
 services:
   webapp:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: registry.cn-hangzhou.aliyuncs.com/bingym/ipcat:latest
+    restart: always
     expose:
       - "80"
     environment:

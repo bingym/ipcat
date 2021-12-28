@@ -1,0 +1,5 @@
+.git/
+.idea/
+.vscode
+
+ip2region.db
