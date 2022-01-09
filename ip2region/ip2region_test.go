@@ -4,35 +4,13 @@ import (
 	"testing"
 )
 
-func BenchmarkBtreeSearch(B *testing.B) {
-	region, err := New("../../data/ip2region.db ")
-	if err != nil {
-		B.Error(err)
-	}
-	for i := 0; i < B.N; i++ {
-		region.BtreeSearch("127.0.0.1")
-	}
-
-}
-
 func BenchmarkMemorySearch(B *testing.B) {
-	region, err := New("../../data/ip2region.db ")
+	region, err := New("../data/ip2region.db")
 	if err != nil {
 		B.Error(err)
 	}
 	for i := 0; i < B.N; i++ {
 		region.MemorySearch("127.0.0.1")
-	}
-
-}
-
-func BenchmarkBinarySearch(B *testing.B) {
-	region, err := New("../../data/ip2region.db ")
-	if err != nil {
-		B.Error(err)
-	}
-	for i := 0; i < B.N; i++ {
-		region.BinarySearch("127.0.0.1")
 	}
 
 }
