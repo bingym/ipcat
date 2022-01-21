@@ -8,7 +8,7 @@
 
 ### Reqeust for details
 
-`GET /info`
+`GET /api/v1/info`
 
 ## Develop
 

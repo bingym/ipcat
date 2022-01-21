@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -20,19 +21,24 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.LoadHTMLGlob("templates/*")
 
 	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, fmt.Sprintf("%s\n", c.ClientIP()))
+		if strings.HasPrefix(c.GetHeader("User-Agent"), "Mozilla") {
+			c.HTML(http.StatusOK, "index.html", nil)
+		} else {
+			c.String(http.StatusOK, fmt.Sprintf("%s\n", c.ClientIP()))
+		}
 	})
 
-	r.GET("/info", func(c *gin.Context) {
+	r.GET("/api/v1/info", func(c *gin.Context) {
 		ipStr := c.DefaultQuery("addr", "")
 		if ipStr == "" {
 			ipStr = c.ClientIP()
 		}
 		ipInfo, err := region.MemorySearch(ipStr)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, map[string]interface{}{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"code": http.StatusInternalServerError,
 				"msg":  err.Error(),
 			})
