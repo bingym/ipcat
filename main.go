@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/bingym/ipcat/ip2region"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"os"
-	"strings"
+
+	"github.com/bingym/ipcat/ip2region"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -21,14 +21,9 @@ func main() {
 	}
 
 	r := gin.Default()
-	r.LoadHTMLGlob("templates/*")
 
 	r.GET("/", func(c *gin.Context) {
-		if strings.HasPrefix(c.GetHeader("User-Agent"), "Mozilla") {
-			c.HTML(http.StatusOK, "index.html", nil)
-		} else {
-			c.String(http.StatusOK, fmt.Sprintf("%s\n", c.ClientIP()))
-		}
+		c.String(http.StatusOK, fmt.Sprintf("%s\n", c.ClientIP()))
 	})
 
 	r.GET("/api/v1/info", func(c *gin.Context) {

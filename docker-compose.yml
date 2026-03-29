@@ -1,6 +1,5 @@
-version: '3'
 services:
-  webapp:
+  web:
     image: registry.cn-hangzhou.aliyuncs.com/bingym/ipcat:latest
     restart: always
     expose:
@@ -8,6 +7,6 @@ services:
     environment:
       APP_MODE: prod
     volumes:
-      - /home/bingym/services/ipcat/data:/app/data
+      - ${PWD}/data:/app/data
     ports:
       - "9993:80"
