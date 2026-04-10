@@ -1,35 +1,41 @@
-# ipcat
+# IPCat
+
+基于 Cloudflare Worker 的 IP 地址查询工具，使用 [IP2Location.io](https://www.ip2location.io/) API。
+
+## 功能
+
+- 自动查询访问者 IP 信息
+- 支持手动输入 IP 查询
+- 显示地理位置、网络、运营商、安全检测等详细信息
+
+## 开发
+
+```bash
+# 安装依赖
+npm install
+
+# 设置 API Key（本地开发）
+# 创建 .dev.vars 文件并写入：
+# IP2LOCATION_KEY=your_key_here
+
+# 启动开发服务器
+npm run dev
+```
+
+## 部署
+
+```bash
+# 设置 API Key（生产环境 secret）
+npx wrangler secret put IP2LOCATION_KEY
+
+# 部署到 Cloudflare
+npm run deploy
+```
 
 ## API
 
-### Request for only IP Address
+### 查询 IP 信息
 
-`GET /`
+`GET /api/lookup?ip=8.8.8.8`
 
-### Reqeust for details
-
-`GET /api/v1/info`
-
-## Develop
-
-```shell
-# start server
-go run main.go
-```
-
-## Deploy
-
-```shell
-# build
-docker build --platform linux/amd64 -t registry.cn-hangzhou.aliyuncs.com/bingym/ipcat_amd64:latest .
-
-# push
-docker push registry.cn-hangzhou.aliyuncs.com/bingym/ipcat_amd64:latest
-
-# pull
-docker pull registry.cn-hangzhou.aliyuncs.com/bingym/ipcat_amd64:latest
-```
-
-## Thanks
-
-https://github.com/lionsoul2014/ip2region
+省略 `ip` 参数时返回请求者自身的 IP 信息。

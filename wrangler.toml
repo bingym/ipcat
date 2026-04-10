@@ -1,0 +1,5 @@
+name = "ipcat"
+main = "src/index.ts"
+compatibility_date = "2025-04-01"
+
+# 通过 wrangler secret put IP2LOCATION_KEY 设置 API Key
