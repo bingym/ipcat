@@ -11,14 +11,78 @@ export default {
     }
 
     if (url.pathname === "/" || url.pathname === "") {
-      return new Response(HTML, {
-        headers: { "Content-Type": "text/html; charset=utf-8" },
-      });
+      if (isBrowser(request.headers.get("User-Agent") ?? "")) {
+        return new Response(HTML, {
+          headers: { "Content-Type": "text/html; charset=utf-8" },
+        });
+      }
+      return handlePlainText(request, env);
     }
 
     return new Response("Not Found", { status: 404 });
   },
 };
+
+function isBrowser(ua: string): boolean {
+  return /Mozilla|Chrome|Safari|Firefox|Edge|Opera|MSIE|Trident/i.test(ua);
+}
+
+async function fetchIpData(
+  ip: string,
+  env: Env,
+): Promise<Record<string, unknown>> {
+  const apiUrl = `https://api.ip2location.io/?key=${env.IP2LOCATION_KEY}&ip=${encodeURIComponent(ip)}`;
+  const resp = await fetch(apiUrl);
+  if (!resp.ok) {
+    throw new Error(`ip2location API 返回 ${resp.status}`);
+  }
+  return resp.json() as Promise<Record<string, unknown>>;
+}
+
+async function handlePlainText(
+  request: Request,
+  env: Env,
+): Promise<Response> {
+  const url = new URL(request.url);
+  const queryIp = url.searchParams.get("ip")?.trim();
+  const clientIp = request.headers.get("CF-Connecting-IP") ?? "";
+  const ip = queryIp || clientIp;
+
+  if (!ip) {
+    return new Response("Error: 无法获取 IP 地址\n", { status: 400 });
+  }
+
+  try {
+    const d = await fetchIpData(ip, env);
+
+    if (d.error) {
+      const err = d.error as Record<string, string>;
+      return new Response(`Error: ${err.error_message ?? "未知错误"}\n`, {
+        status: 400,
+      });
+    }
+
+    const lines = [
+      `IP       : ${d.ip}`,
+      `国家     : ${d.country_name} (${d.country_code})`,
+      `地区     : ${d.region_name}`,
+      `城市     : ${d.city_name}`,
+      `邮编     : ${d.zip_code}`,
+      `坐标     : ${d.latitude}, ${d.longitude}`,
+      `时区     : ${d.time_zone}`,
+      `ASN      : ${d.asn}`,
+      `AS       : ${d.as}`,
+      `代理/VPN : ${d.is_proxy ? "是" : "否"}`,
+    ];
+
+    return new Response(lines.join("\n") + "\n", {
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "未知错误";
+    return new Response(`Error: ${message}\n`, { status: 500 });
+  }
+}
 
 async function handleLookup(
   request: Request,
@@ -34,17 +98,7 @@ async function handleLookup(
   }
 
   try {
-    const apiUrl = `https://api.ip2location.io/?key=${env.IP2LOCATION_KEY}&ip=${encodeURIComponent(ip)}`;
-    const resp = await fetch(apiUrl);
-
-    if (!resp.ok) {
-      return Response.json(
-        { error: `ip2location API 返回 ${resp.status}` },
-        { status: 502 },
-      );
-    }
-
-    const data = await resp.json();
+    const data = await fetchIpData(ip, env);
     return Response.json(data, {
       headers: {
         "Access-Control-Allow-Origin": "*",
@@ -67,6 +121,22 @@ const HTML = `<!DOCTYPE html>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-secondary: #64748b;
+    --accent: #0ea5e9;
+    --accent-dim: #0284c7;
+    --green: #16a34a;
+    --red: #dc2626;
+    --yellow: #ca8a04;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  [data-theme="dark"] {
     --bg: #0f172a;
     --surface: #1e293b;
     --surface-hover: #334155;
@@ -78,7 +148,7 @@ const HTML = `<!DOCTYPE html>
     --green: #4ade80;
     --red: #f87171;
     --yellow: #fbbf24;
-    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
   }
 
   body {
@@ -87,6 +157,7 @@ const HTML = `<!DOCTYPE html>
     color: var(--text);
     min-height: 100vh;
     line-height: 1.6;
+    transition: background 0.3s, color 0.3s;
   }
 
   .container {
@@ -98,6 +169,7 @@ const HTML = `<!DOCTYPE html>
   header {
     text-align: center;
     margin-bottom: 40px;
+    position: relative;
   }
 
   header h1 {
@@ -115,6 +187,27 @@ const HTML = `<!DOCTYPE html>
     font-size: 1.05rem;
   }
 
+  .theme-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.2s, border-color 0.2s;
+    box-shadow: var(--shadow);
+    color: var(--text);
+  }
+
+  .theme-toggle:hover { background: var(--surface-hover); }
+
   .search-box {
     display: flex;
     gap: 12px;
@@ -131,7 +224,8 @@ const HTML = `<!DOCTYPE html>
     color: var(--text);
     font-size: 1rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, background 0.3s;
+    box-shadow: var(--shadow);
   }
 
   .search-box input::placeholder { color: var(--text-secondary); }
@@ -142,12 +236,13 @@ const HTML = `<!DOCTYPE html>
     border-radius: var(--radius);
     border: none;
     background: var(--accent);
-    color: var(--bg);
+    color: #fff;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: background 0.2s;
     white-space: nowrap;
+    box-shadow: var(--shadow);
   }
 
   .search-box button:hover { background: var(--accent-dim); }
@@ -176,11 +271,16 @@ const HTML = `<!DOCTYPE html>
   .error-msg {
     text-align: center;
     padding: 24px;
-    background: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.3);
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.2);
     border-radius: var(--radius);
     color: var(--red);
     margin-bottom: 20px;
+  }
+
+  [data-theme="dark"] .error-msg {
+    background: rgba(248, 113, 113, 0.1);
+    border-color: rgba(248, 113, 113, 0.3);
   }
 
   .ip-hero {
@@ -190,6 +290,8 @@ const HTML = `<!DOCTYPE html>
     border-radius: var(--radius);
     margin-bottom: 24px;
     border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border-color 0.3s;
   }
 
   .ip-hero .ip-addr {
@@ -225,6 +327,8 @@ const HTML = `<!DOCTYPE html>
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 24px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, border-color 0.3s;
   }
 
   .card h3 {
@@ -266,18 +370,21 @@ const HTML = `<!DOCTYPE html>
   }
 
   .badge-safe {
-    background: rgba(74, 222, 128, 0.15);
+    background: rgba(22, 163, 74, 0.1);
     color: var(--green);
   }
 
   .badge-warn {
-    background: rgba(251, 191, 36, 0.15);
+    background: rgba(202, 138, 4, 0.1);
     color: var(--yellow);
   }
 
-  .badge-danger {
-    background: rgba(248, 113, 113, 0.15);
-    color: var(--red);
+  [data-theme="dark"] .badge-safe {
+    background: rgba(74, 222, 128, 0.15);
+  }
+
+  [data-theme="dark"] .badge-warn {
+    background: rgba(251, 191, 36, 0.15);
   }
 
   .map-link {
@@ -321,6 +428,7 @@ const HTML = `<!DOCTYPE html>
   <header>
     <h1>IPCat</h1>
     <p>输入 IP 地址查询详细信息，留空则查询您当前的 IP</p>
+    <button class="theme-toggle" id="themeToggle" title="切换主题"></button>
   </header>
 
   <div class="search-box">
@@ -337,6 +445,26 @@ const HTML = `<!DOCTYPE html>
 </div>
 
 <script>
+(function() {
+  const saved = localStorage.getItem('theme');
+  const theme = saved || 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  updateIcon(theme);
+})();
+
+function updateIcon(theme) {
+  var btn = document.getElementById('themeToggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+document.getElementById('themeToggle').addEventListener('click', function() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  updateIcon(next);
+});
+
 const input = document.getElementById('ipInput');
 const result = document.getElementById('result');
 const btn = document.getElementById('searchBtn');
